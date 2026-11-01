@@ -1,0 +1,11 @@
+desired:
+  name: Loopback244
+  ipv4: 172.24.44.5/32
+  description: IPA2026-67070244
+  admin_state: up
+
+current:
+  name: Loopback244
+  ipv4: 172.24.44.4/32
+  description: IPA2026-67070244
+  admin_state: up

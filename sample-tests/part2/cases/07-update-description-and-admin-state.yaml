@@ -1,0 +1,13 @@
+fixture: 07-update-description-and-admin-state.yaml
+
+expected:
+  status: ok
+  result: planned
+  operation: update
+  changes:
+    description:
+      from: IPA2026-67070244
+      to: IPA2026-67070244-V2
+    admin_state:
+      from: up
+      to: down

@@ -1,0 +1,7 @@
+desired:
+  name: Loopback246
+  ipv4: 172.24.46.9/32
+  description: IPA2026-67070244-DOWN
+  admin_state: down
+
+current: null

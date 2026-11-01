@@ -26,29 +26,29 @@ def validate_request(data):
     
     version = data.get("version")
 
-    # version = 1
+    #version = 1
     if type(version) is not int or version != 1:
             return _error("invalid_version")
 
-    # 2. router
+    #router
     if data.get("router") is None:
         return _error("missing_router")
     if data["router"] not in ALLOWED_ROUTERS:
         return _error("invalid_router")
 
-    # 3. method
+    #method
     if data.get("method") is None:
         return _error("missing_method")
     if data["method"] not in SUPPORTED_ACTIONS:
         return _error("invalid_method")
 
-    # 4. action (ต้องเข้ากับ method)
+    #action
     if data.get("action") is None:
         return _error("missing_action")
     if data["action"] not in SUPPORTED_ACTIONS[data["method"]]:
         return _error("invalid_action")
 
-        # 5. desired -> interface -> name
+    #desired -> interface -> name
     desired = data.get("desired")
 
     if not isinstance(desired, dict):
@@ -61,7 +61,7 @@ def validate_request(data):
     if not interface.get("name"):
         return _error("missing_interface_name")
 
-        # 6. ต้องมีครบทั้ง 4 ช่อง เฉพาะ plan กับ apply
+    #plan กับ apply
     if data["action"] in ("plan", "apply"):
         if interface.get("ipv4") is None:
             return _error("missing_ipv4")

@@ -1,0 +1,10 @@
+fixture: 09-update-null-description.yaml
+
+expected:
+  status: ok
+  result: planned
+  operation: update
+  changes:
+    description:
+      from: null
+      to: IPA2026-67070244

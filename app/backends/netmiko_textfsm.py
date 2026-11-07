@@ -61,6 +61,29 @@ def _normalize(interface_name, ip_info, descriptions):
         "admin_state": admin_state,
     }
 
+def _show(connection, command):
+    """รันคำสั่ง show คืน list ของ dict หรือ None เมื่อ IOS ปฏิเสธคำสั่ง
+    (เช่น interface ที่ไม่มีอยู่)"""
+    from ntc_templates.parse import parse_output
+
+    raw = connection.send_command(command)  # ไม่ใช้ use_textfsm
+    lowered = raw.lower()
+    if "% invalid" in lowered or "invalid input" in lowered:
+        return None
+    return parse_output(platform="cisco_ios", command=command, data=raw)
+
+def _translate_netmiko_error(exc):
+    """แปลง exception ของ Netmiko/paramiko ให้เป็นชนิดที่ error_from_exception รู้จัก
+    ตรวจจากชื่อคลาส เพื่อไม่ต้อง import netmiko/paramiko (ใน venv และ CI อาจไม่มี)"""
+    if isinstance(exc, PermissionError):
+        return exc
+    names = {cls.__name__ for cls in type(exc).__mro__}
+    if names & {"NetmikoAuthenticationException", "AuthenticationException"}:
+        return PermissionError(str(exc))
+    if names & {"NetmikoTimeoutException", "SSHException"} or isinstance(exc, OSError):
+        return ConnectionError(str(exc))
+    return exc
+
 def _default_netmiko_get(router, interface_name):
     from netmiko import ConnectHandler
 
@@ -69,22 +92,16 @@ def _default_netmiko_get(router, interface_name):
     user, password = router_credentials()
     connection = ConnectHandler(
         device_type="cisco_ios", host=router, username=user,
-        password=password, timeout=10, conn_timeout=10,
+        password=password, timeout=30, conn_timeout=30,
+        auth_timeout=30, banner_timeout=30,
     )
     try:
-        ip_info = connection.send_command(
-            f"show ip interface {interface_name}", use_textfsm=True
-        )
-        descriptions = connection.send_command(
-            "show interfaces description", use_textfsm=True
-        )
+        ip_info = _show(connection, f"show ip interface {interface_name}")
+        if ip_info is None:
+            return [], []
+        descriptions = _show(connection, "show interfaces description") or []
     finally:
         connection.disconnect()
-    # ถ้า TextFSM อ่านไม่ออก netmiko จะคืนข้อความดิบ (str) ไม่ใช่ list
-    if not isinstance(ip_info, list):
-        ip_info = []
-    if not isinstance(descriptions, list):
-        descriptions = []
     return ip_info, descriptions
 
 def _default_netmiko_delete(router, interface_name):
@@ -96,13 +113,12 @@ def _default_netmiko_delete(router, interface_name):
     user, password = router_credentials()
     connection = ConnectHandler(
         device_type="cisco_ios", host=router, username=user,
-        password=password, timeout=10, conn_timeout=10,
+        password=password, timeout=30, conn_timeout=30,
+        auth_timeout=30, banner_timeout=30,
     )
     try:
-        before = connection.send_command(
-            f"show ip interface {name}", use_textfsm=True
-        )
-        if not isinstance(before, list) or not before:
+        before = _show(connection, f"show ip interface {name}")
+        if not before:
             return "not_found"
         connection.send_config_set([f"no interface {name}"])
         return "deleted"
@@ -120,7 +136,7 @@ def get_interface_state(router, interface_name,netmiko_get=None):
             return {"status": "ok", "result": "not_found", "interface": None}
         return {"status": "ok", "result": "found", "interface": interface}
     except Exception as exc:
-        return error_from_exception(exc)
+        return error_from_exception(_translate_netmiko_error(exc))
 
 def delete_interface(router, interface_name, netmiko_delete=None):
     """Delete an interface using Netmiko."""
@@ -129,7 +145,7 @@ def delete_interface(router, interface_name, netmiko_delete=None):
         loopback_number(interface_name)  # ลบได้เฉพาะ Loopback
         result = netmiko_delete(router, interface_name)
     except Exception as exc:
-        return error_from_exception(exc)
+        return error_from_exception(_translate_netmiko_error(exc))
 
     if result == "deleted":
         return {"status": "ok", "result": "deleted"}

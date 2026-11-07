@@ -5,4 +5,4 @@ action: status
 
 desired:
   interface:
-    name: Loopback67070244
+    name: Loopback123

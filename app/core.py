@@ -74,6 +74,25 @@ def validate_request(data):
 
     return {"status": "ok", "result": "accepted"}
 
+def load_request_file(path):
+    """Return (data, None) on success or (None, error_response)."""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+    except (yaml.YAMLError, UnicodeDecodeError):
+        return None, _error("invalid_yaml")
+
+    if not isinstance(data, dict):
+        return None, _error("invalid_yaml")
+    return data, None
+
+
+def process_request_file(path):
+    data, err = load_request_file(path)
+    if err is not None:
+        return err
+    return validate_request(data)
+
 def process_request_file(path):
     """
     Read a YAML request file, validate it, and return a response dictionary.
@@ -84,4 +103,22 @@ def process_request_file(path):
             data = yaml.safe_load(f)
     except yaml.YAMLError:
         return _error("invalid_yaml")
+    return validate_request(data)
+
+def load_request_file(path):
+    """Return (data, None) on success or (None, error_response)."""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+    except (yaml.YAMLError, UnicodeDecodeError):
+        return None, _error("invalid_yaml")
+
+    if not isinstance(data, dict):
+        return None, _error("invalid_yaml")
+    return data, None
+
+def process_request_file(path):
+    data, err = load_request_file(path)
+    if err is not None:
+        return err
     return validate_request(data)

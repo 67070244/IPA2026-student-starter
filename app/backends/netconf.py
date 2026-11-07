@@ -5,27 +5,14 @@ import re
 import os
 
 from app.backends import planning
+from app.backends.common import error as _error
+from app.backends.common import error_from_exception as _error_from_exception
+from app.backends.common import router_credentials as _auth
 
 IF_NS = "urn:ietf:params:xml:ns:yang:ietf-interfaces"
 IP_NS = "urn:ietf:params:xml:ns:yang:ietf-ip"
 NETCONF_PORT = 830
 REQUEST_TIMEOUT = 10
-
-def _error(code):
-    return {"status": "error", "result": code}
-
-def _error_from_exception(exc):
-    if isinstance(exc, PermissionError):
-        return _error("authentication_failed")
-    if isinstance(exc, (ConnectionError, TimeoutError)):
-        return _error("connection_failed")
-    return _error("backend_failed")
-
-def _auth():
-    return (
-        os.environ.get("ROUTER_USER", ""),
-        os.environ.get("ROUTER_PASS", ""),
-    )
 
 def _text(parent, tag, ns):
     """อ่านข้อความของ element ลูก ถ้าไม่มีให้คืน None"""

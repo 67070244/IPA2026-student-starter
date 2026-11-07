@@ -1,35 +1,14 @@
 from ipaddress import IPv4Network, IPv4Interface
 from app.backends import planning
 import requests
-import os
 import re
+
+from app.backends.common import error as _error
+from app.backends.common import error_from_exception as _error_from_exception
+from app.backends.common import router_credentials as _auth
 
 REQUEST_TIMEOUT = 10
 YANG_JSON = "application/yang-data+json"
-
-def _error(code):
-    return {"status": "error", "result": code}
-
-def _error_from_exception(exc):
-    if isinstance(exc, PermissionError):
-        return _error("authentication_failed")
-    if isinstance(
-        exc,
-        (
-            ConnectionError,
-            TimeoutError,
-            requests.exceptions.ConnectionError,
-            requests.exceptions.Timeout,
-        ),
-    ):
-        return _error("connection_failed")
-    return _error("backend_failed")
-
-def _auth():
-    return (
-        os.environ.get("ROUTER_USER", ""),
-        os.environ.get("ROUTER_PASS", ""),
-    )
 
 def _default_http_get(url):
     return requests.get(

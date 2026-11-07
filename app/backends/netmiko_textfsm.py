@@ -121,6 +121,9 @@ def _default_netmiko_delete(router, interface_name):
         if not before:
             return "not_found"
         connection.send_config_set([f"no interface {name}"])
+        after = _show(connection, f"show ip interface {name}")
+        if after:
+            raise RuntimeError(f"{name} still present after delete")
         return "deleted"
     finally:
         connection.disconnect()

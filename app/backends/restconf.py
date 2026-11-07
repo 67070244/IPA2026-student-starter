@@ -63,7 +63,7 @@ def get_interface_state(router, interface_name, http_get=None):
                 "name": data["name"],
                 "ipv4": ipv4,
                 "description": data.get("description"),
-                "admin_state": "up" if data.get("enabled") else "down",
+                "admin_state": "up" if data.get("enabled", True) else "down",
             },
         }
     except Exception as exc:

@@ -4,6 +4,10 @@ from ipaddress import IPv4Interface, IPv4Network
 
 import requests
 
+import logging
+
+logger = logging.getLogger("ipa2026.backend")
+
 _LOOPBACK_RE = re.compile(r"Loopback(\d+)")
 _SAFE_NAME_RE = re.compile(r"[A-Za-z][A-Za-z0-9/.\-]*")
 
@@ -11,6 +15,7 @@ def error(code):
     return {"status": "error", "result": code}
 
 def error_from_exception(exc):
+    logger.warning("backend error: %s: %s", type(exc).__name__, exc)
     if isinstance(exc, PermissionError):
         return error("authentication_failed")
     if isinstance(
